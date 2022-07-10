@@ -6,9 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
 import it.polito.tdp.PremierLeague.model.Action;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
+import it.polito.tdp.PremierLeague.model.PlayerEff;
 import it.polito.tdp.PremierLeague.model.Team;
 
 public class PremierLeagueDAO {
@@ -85,7 +88,8 @@ public class PremierLeagueDAO {
 	public List<Match> listAllMatches(){
 		String sql = "SELECT m.MatchID, m.TeamHomeID, m.TeamAwayID, m.teamHomeFormation, m.teamAwayFormation, m.resultOfTeamHome, m.date, t1.Name, t2.Name   "
 				+ "FROM Matches m, Teams t1, Teams t2 "
-				+ "WHERE m.TeamHomeID = t1.TeamID AND m.TeamAwayID = t2.TeamID";
+				+ "WHERE m.TeamHomeID = t1.TeamID AND m.TeamAwayID = t2.TeamID "
+				+ "ORDER BY m.MatchID ASC";
 		List<Match> result = new ArrayList<Match>();
 		Connection conn = DBConnect.getConnection();
 
@@ -110,5 +114,68 @@ public class PremierLeagueDAO {
 			return null;
 		}
 	}
+	
+	
+	
+	
+	public List<PlayerEff> listPlayersMatch(Integer i){
+		String sql = "SELECT DISTINCT p.*, ((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) as efficienza, a.TeamID as team "
+				+ "	FROM Players p, Actions a "
+				+ "	WHERE p.PlayerID = a.PlayerID "
+				+ "	AND a.MatchID = ? ";
+		List<PlayerEff> result = new ArrayList<PlayerEff>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, i);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				PlayerEff player = new PlayerEff(res.getInt("PlayerID"), res.getString("Name"), res.getDouble("efficienza"), res.getInt("team"));
+				result.add(player);
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public PlayerEff topPlayer(Integer i){
+		String sql = "SELECT p1.*, SUM(((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) - ((a2.TotalSuccessfulPassesAll+a2.Assists)/a2.TimePlayed)) as delta, a.TeamID "
+				+ "FROM Players p1, Players p2, Actions a, Actions a2 "
+				+ "WHERE p1.PlayerID = a.PlayerID  "
+				+ "AND p2.PlayerID = a2.PlayerID "
+				+ "AND a.MatchID = ? "
+				+ "AND a2.MatchID = a.MatchID "
+				+ "AND a.TeamID <> a2.TeamID "
+				+ "GROUP BY p1.Name, p1.PlayerID "
+				+ "ORDER BY delta DESC"
+				+ "";
+		;
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, i);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				PlayerEff player = new PlayerEff(res.getInt("PlayerID"), res.getString("Name"), res.getDouble("delta"), res.getInt("TeamID"));
+				conn.close();
+				return player;
+			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		return null;
+	}
+	
 	
 }

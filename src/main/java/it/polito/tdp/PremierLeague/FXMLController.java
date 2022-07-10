@@ -47,11 +47,23 @@ public class FXMLController {
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	if(cmbMatch.getValue()!=null)
+    	{txtResult.setText(model.creaGrafo(cmbMatch.getValue()));}
+    	else {
+    		txtResult.setText("Selezionare un match valido ");
+    	}
+    	
     	
     }
 
     @FXML
-    void doGiocatoreMigliore(ActionEvent event) {    	
+    void doGiocatoreMigliore(ActionEvent event) {
+    	
+    	if(cmbMatch.getValue()!=null)
+    	{txtResult.setText(model.topPlayer(cmbMatch.getValue()));}
+    	else {
+    		txtResult.setText("Selezionare un match valido ");
+    	}
     	
     }
     
@@ -73,5 +85,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	cmbMatch.getItems().addAll(model.getListaPartite());
     }
 }
