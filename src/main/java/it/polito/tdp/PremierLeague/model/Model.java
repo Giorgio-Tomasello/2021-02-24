@@ -1,5 +1,6 @@
 package it.polito.tdp.PremierLeague.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,8 +16,8 @@ public class Model {
 	
 	private PremierLeagueDAO dao;
 	private List<Match> listaPartite;
-	private List<PlayerEff> listaGiocatori;
-	private Graph<PlayerEff, DefaultWeightedEdge> grafo;
+	private List<Player> listaGiocatori;
+	private Graph<Player, DefaultWeightedEdge> grafo;
 	
 	
 	public Model() {
@@ -37,21 +38,17 @@ public class Model {
 	public String creaGrafo(Match m) {
 		
 		
-		listaGiocatori = new LinkedList<PlayerEff>(dao.listPlayersMatch(m.getMatchID()));
+		listaGiocatori = new LinkedList<Player>(dao.listPlayersMatch(m.getMatchID()));
 		
-		this.grafo = new SimpleDirectedWeightedGraph<PlayerEff,DefaultWeightedEdge>(DefaultWeightedEdge.class);
+		this.grafo = new SimpleDirectedWeightedGraph<Player,DefaultWeightedEdge>(DefaultWeightedEdge.class);
 		
 		Graphs.addAllVertices(this.grafo, listaGiocatori);
 		
-		double eff=0.0;
-		for(PlayerEff p : listaGiocatori)
-			{for(PlayerEff p2 : listaGiocatori)
-				{if(!p.equals(p2) && p.getT()!=p2.getT())
-					{if(p.getEfficienza()>p2.getEfficienza())
-						{eff = (p.getEfficienza()-p2.getEfficienza());
-							Graphs.addEdge(this.grafo, p, p2, eff);}}
-					}
-					}
+		for(Coppia c : dao.getArchi(m.getMatchID()))
+			Graphs.addEdge(this.grafo, c.getP1(), c.getP2(), c.getDelta());
+			
+					
+					
 
 		
 		String output = "GRAFO CREATO" + "\n" + "Numero vertici: " + this.grafo.vertexSet().size() + 
@@ -63,9 +60,17 @@ public class Model {
 	
 	public String topPlayer(Match m) {
 		
-		PlayerEff p = dao.topPlayer(m.getMatchID());
+		return dao.topPlayer(m.getMatchID());
 		
-		return p.getPlayerID() + " - " + p.getName() + ", delta efficienza: " + p.getEfficienza();
+		
+	}
+	
+	public void Simula(int n, Match m) {
+		
+		Simulatore sim = new Simulatore();
+		List<Team> listaSquadre = new ArrayList<>();
+		
+		sim.setSquadre(null);
 	}
 		
 		

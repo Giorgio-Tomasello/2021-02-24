@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Set;
 
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Coppia;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
-import it.polito.tdp.PremierLeague.model.PlayerEff;
+import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
 
 public class PremierLeagueDAO {
@@ -118,12 +119,12 @@ public class PremierLeagueDAO {
 	
 	
 	
-	public List<PlayerEff> listPlayersMatch(Integer i){
-		String sql = "SELECT DISTINCT p.*, ((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) as efficienza, a.TeamID as team "
+	public List<Player> listPlayersMatch(Integer i){
+		String sql = "SELECT DISTINCT p.* "
 				+ "	FROM Players p, Actions a "
 				+ "	WHERE p.PlayerID = a.PlayerID "
 				+ "	AND a.MatchID = ? ";
-		List<PlayerEff> result = new ArrayList<PlayerEff>();
+		List<Player> result = new ArrayList<Player>();
 		Connection conn = DBConnect.getConnection();
 
 		try {
@@ -132,7 +133,7 @@ public class PremierLeagueDAO {
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
 
-				PlayerEff player = new PlayerEff(res.getInt("PlayerID"), res.getString("Name"), res.getDouble("efficienza"), res.getInt("team"));
+				Player player = new Player(res.getInt("PlayerID"), res.getString("Name"));
 				result.add(player);
 			}
 			conn.close();
@@ -144,7 +145,49 @@ public class PremierLeagueDAO {
 		}
 	}
 	
-	public PlayerEff topPlayer(Integer i){
+	public List<Coppia> getArchi(Integer i){
+		String sql = "SELECT p1.*, p2.*, (((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) - ((a2.TotalSuccessfulPassesAll+a2.Assists)/a2.TimePlayed)) as delta "
+				+ "FROM Players p1, Players p2, Actions a, Actions a2 "
+				+ "WHERE a.PlayerID = p1.PlayerID AND a2.PlayerID = p2.PlayerID "
+				+ "AND a.TeamID <> a2.TeamID "
+				+ "AND a.MatchID = ? AND a2.MatchID = ? "
+				+ "AND p1.PlayerID > p2.PlayerID";
+		List<Coppia> result = new ArrayList<Coppia>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, i);
+			st.setInt(2, i);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				Player player1 = new Player(res.getInt("p1.PlayerID"), res.getString("p1.Name"));
+				Player player2 = new Player(res.getInt("p2.PlayerID"), res.getString("p2.Name"));
+				if(res.getDouble("delta")>0)
+					{Coppia c = new Coppia (player1, player2, res.getDouble("delta"));
+						result.add(c);
+					}
+				else {
+					Coppia c = new Coppia (player2, player1, res.getDouble("delta"));
+					result.add(c);
+				}
+				
+				
+				
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	
+	
+	public String topPlayer(Integer i){
 		String sql = "SELECT p1.*, SUM(((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) - ((a2.TotalSuccessfulPassesAll+a2.Assists)/a2.TimePlayed)) as delta, a.TeamID "
 				+ "FROM Players p1, Players p2, Actions a, Actions a2 "
 				+ "WHERE p1.PlayerID = a.PlayerID  "
@@ -153,20 +196,19 @@ public class PremierLeagueDAO {
 				+ "AND a2.MatchID = a.MatchID "
 				+ "AND a.TeamID <> a2.TeamID "
 				+ "GROUP BY p1.Name, p1.PlayerID "
-				+ "ORDER BY delta DESC"
-				+ "";
+				+ "ORDER BY delta DESC";
 		;
 		Connection conn = DBConnect.getConnection();
-
+		String output="";
 		try {
 			PreparedStatement st = conn.prepareStatement(sql);
 			st.setInt(1, i);
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
-
-				PlayerEff player = new PlayerEff(res.getInt("PlayerID"), res.getString("Name"), res.getDouble("delta"), res.getInt("TeamID"));
+				output= res.getInt("PlayerID") + " - " + res.getString("Name") + " delta efficienza: " + res.getDouble("delta");
+				
 				conn.close();
-				return player;
+				return output;
 			}
 			
 			
@@ -177,5 +219,26 @@ public class PremierLeagueDAO {
 		return null;
 	}
 	
+	public List<Team> listTeamsMatch(){
+		String sql = "SELECT * FROM Teams";
+		List<Team> result = new ArrayList<Team>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
+				result.add(team);
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 	
 }
