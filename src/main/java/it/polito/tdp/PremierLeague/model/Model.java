@@ -18,6 +18,11 @@ public class Model {
 	private List<Match> listaPartite;
 	private List<Player> listaGiocatori;
 	private Graph<Player, DefaultWeightedEdge> grafo;
+	List<Team> listaSquadre;
+	Team home;
+	Team away;
+	int goalHome;
+	int goalAway;
 	
 	
 	public Model() {
@@ -65,14 +70,27 @@ public class Model {
 		
 	}
 	
-	public void Simula(int n, Match m) {
+	public String Simula(int n, Match m) {
+		
+		
 		
 		Simulatore sim = new Simulatore();
-		List<Team> listaSquadre = new ArrayList<>();
+		listaSquadre = new ArrayList<>(dao.listTeamsMatch(m.getMatchID()));
 		
-		sim.setSquadre(null);
+		sim.init(n, listaSquadre);
+		sim.run(dao.topPlayerTeam(m.getMatchID()));
+		
+		String output = "Il risultato finale della partita è: " + sim.getHome().getName()+ " " + sim.getGoalHome() + " --- " + 
+						sim.getAway().getName() + " " + sim.getGoalAway() + "\n" + 
+						"Espulsi --> " + sim.getHome().getName() + " " + sim.getEspulsiHome() + " " + 
+						sim.getAway().getName() + " " + sim.getEspulsiAway();
+		
+		return output;
+		
 	}
-		
+
+
+	
 		
 		
 	

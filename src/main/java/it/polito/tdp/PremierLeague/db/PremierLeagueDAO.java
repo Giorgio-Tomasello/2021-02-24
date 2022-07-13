@@ -207,6 +207,7 @@ public class PremierLeagueDAO {
 			while (res.next()) {
 				output= res.getInt("PlayerID") + " - " + res.getString("Name") + " delta efficienza: " + res.getDouble("delta");
 				
+				
 				conn.close();
 				return output;
 			}
@@ -219,18 +220,58 @@ public class PremierLeagueDAO {
 		return null;
 	}
 	
-	public List<Team> listTeamsMatch(){
-		String sql = "SELECT * FROM Teams";
+	public int topPlayerTeam(Integer i){
+		String sql = "SELECT p1.*, SUM(((a.TotalSuccessfulPassesAll+a.Assists)/a.TimePlayed) - ((a2.TotalSuccessfulPassesAll+a2.Assists)/a2.TimePlayed)) as delta, a.TeamID "
+				+ "FROM Players p1, Players p2, Actions a, Actions a2 "
+				+ "WHERE p1.PlayerID = a.PlayerID  "
+				+ "AND p2.PlayerID = a2.PlayerID "
+				+ "AND a.MatchID = ? "
+				+ "AND a2.MatchID = a.MatchID "
+				+ "AND a.TeamID <> a2.TeamID "
+				+ "GROUP BY p1.Name, p1.PlayerID "
+				+ "ORDER BY delta DESC";
+		;
+		Connection conn = DBConnect.getConnection();
+		String output="";
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, i);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				
+
+				conn.close();
+				return res.getInt("a.TeamID");
+			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return -1;
+		}
+		return -1;
+	}
+	
+	
+	public List<Team> listTeamsMatch(int match){
+		String sql = "SELECT t1.*, t2.* "
+				+ "FROM Teams t1, Teams t2, Matches m "
+				+ "WHERE t1.TeamID = m.TeamHomeID "
+				+ "AND t2.TeamID = m.TeamAwayID "
+				+ "AND m.MatchID = ? ";
 		List<Team> result = new ArrayList<Team>();
 		Connection conn = DBConnect.getConnection();
 
 		try {
 			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, match);
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
 
-				Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
-				result.add(team);
+				Team team1 = new Team(res.getInt("t1.TeamID"), res.getString("t1.Name"));
+				Team team2 = new Team(res.getInt("t2.TeamID"), res.getString("t2.Name"));
+				result.add(team1);
+				result.add(team2);
 			}
 			conn.close();
 			return result;

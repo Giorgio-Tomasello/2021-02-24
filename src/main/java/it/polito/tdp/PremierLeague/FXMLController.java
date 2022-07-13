@@ -69,6 +69,8 @@ public class FXMLController {
     
     @FXML
     void doSimula(ActionEvent event) {
+    	
+    	txtResult.setText(model.Simula(Integer.parseInt(txtN.getText()) , cmbMatch.getValue()));
 
     }
 

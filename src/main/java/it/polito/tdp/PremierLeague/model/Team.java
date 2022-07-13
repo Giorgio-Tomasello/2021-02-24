@@ -10,6 +10,7 @@ public class Team {
 		super();
 		this.teamID = teamID;
 		this.name = name;
+		
 	}
 	
 	public int getnGiocatori() {
@@ -18,6 +19,10 @@ public class Team {
 
 	public void setnGiocatori(int nGiocatori) {
 		this.nGiocatori = nGiocatori;
+	}
+	
+	public void setEspulsi() {
+		this.nGiocatori--;
 	}
 
 	public Integer getTeamID() {
